@@ -27,13 +27,11 @@ function doGet(e) {
     }
 
     return htmlOutput
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN)
       .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 
   } catch (error) {
     Logger.log('Error in doGet: ' + error.toString());
-    return HtmlService.createHtmlOutput('<h1>Error loading page</h1><p>' + error.toString() + '</p>')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN);
+    return HtmlService.createHtmlOutput('<h1>Error loading page</h1><p>' + error.toString() + '</p>');
   }
 }
 
