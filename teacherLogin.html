@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Teacher Login - English 9 Grammar Practice</title>
+    <?!= include('styles') ?>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <h1>Teacher Login</h1>
+            <p class="subtitle">Enter your teacher email address</p>
+
+            <form id="teacherLoginForm">
+                <div class="form-group">
+                    <label for="teacherEmail">Orono Schools Email Address:</label>
+                    <input type="email" id="teacherEmail" name="teacherEmail" required
+                           placeholder="teacher@oronoschools.org" class="form-control"
+                           pattern=".*@oronoschools\.org$"
+                           title="Please enter your Orono Schools email address">
+                </div>
+
+                <button type="submit" class="btn btn-secondary btn-block">Login</button>
+
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                <div id="loadingMessage" class="loading-message" style="display: none;">Logging in...</div>
+            </form>
+
+            <div class="back-link">
+                <a href="?page=login">&larr; Back to main login</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('teacherLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('teacherEmail').value.trim();
+            const errorDiv = document.getElementById('errorMessage');
+            const loadingDiv = document.getElementById('loadingMessage');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            if (!email) {
+                showError('Please enter your email address.');
+                return;
+            }
+
+            // Client-side domain validation
+            if (!email.toLowerCase().endsWith('@oronoschools.org')) {
+                showError('Please use your Orono Schools email address (@oronoschools.org).');
+                return;
+            }
+
+            errorDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            submitBtn.disabled = true;
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    loadingDiv.style.display = 'none';
+                    submitBtn.disabled = false;
+
+                    if (result.success) {
+                        window.location.href = '?page=teacherDashboard';
+                    } else {
+                        showError(result.message || 'Login failed. Please check your email address.');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    loadingDiv.style.display = 'none';
+                    submitBtn.disabled = false;
+                    showError('Login error: ' + error.message);
+                })
+                .authenticateTeacher(email);
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
