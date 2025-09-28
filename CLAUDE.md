@@ -84,3 +84,5 @@ clasp logs          # View execution logs
 - Teacher emails must be in the authorized list
 - Progress is automatically recorded by teacher assignment
 - The application uses Google Apps Script's PropertiesService for session management
+- The active GAS web app deployment ID is "AKfycbxGguRYf8MLjDyAz1IhxWcPReVo8PXGybLyBccChzdYm9aroOM0llvniUO0KpA7WD0qTw".
+- When the user types "/deploy", you are to run 1) git add . 2) git commit -m "[detailed message]" 3) git push 4) clasp push --force 5) clasp deploy --deploymentId AKfycbxGguRYf8MLjDyAz1IhxWcPReVo8PXGybLyBccChzdYm9aroOM0llvniUO0KpA7WD0qTw

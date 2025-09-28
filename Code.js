@@ -27,7 +27,8 @@ function doGet(e) {
     }
 
     return htmlOutput
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
   } catch (error) {
     Logger.log('Error in doGet: ' + error.toString());
