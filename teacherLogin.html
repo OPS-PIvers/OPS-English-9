@@ -17,7 +17,7 @@
                 <div class="form-group">
                     <label for="teacherEmail">Orono Schools Email Address:</label>
                     <input type="email" id="teacherEmail" name="teacherEmail" required
-                           placeholder="teacher@oronoschools.org" class="form-control"
+                           placeholder="teacher@orono.k12.mn.us" class="form-control"
                            pattern=".*@oronoschools\.org$"
                            title="Please enter your Orono Schools email address">
                 </div>
@@ -49,8 +49,8 @@
             }
 
             // Client-side domain validation
-            if (!email.toLowerCase().endsWith('@oronoschools.org')) {
-                showError('Please use your Orono Schools email address (@oronoschools.org).');
+            if (!email.toLowerCase().endsWith('@orono.k12.mn.us')) {
+                showError('Please use your Orono Schools email address (@orono.k12.mn.us).');
                 return;
             }
 

@@ -1,30 +1,8 @@
-// Main web app entry point
+// Main web app entry point - now serves single page application
 function doGet(e) {
-  const page = e.parameter.page || 'login';
-
   try {
-    let htmlOutput;
-
-    switch(page) {
-      case 'studentLogin':
-        htmlOutput = HtmlService.createTemplateFromFile('studentLogin').evaluate();
-        break;
-      case 'teacherLogin':
-        htmlOutput = HtmlService.createTemplateFromFile('teacherLogin').evaluate();
-        break;
-      case 'studentDashboard':
-        htmlOutput = HtmlService.createTemplateFromFile('studentDashboard').evaluate();
-        break;
-      case 'teacherDashboard':
-        htmlOutput = HtmlService.createTemplateFromFile('teacherDashboard').evaluate();
-        break;
-      case 'grammarPractice':
-        htmlOutput = HtmlService.createTemplateFromFile('grammarPractice').evaluate();
-        break;
-      default:
-        htmlOutput = HtmlService.createTemplateFromFile('login').evaluate();
-        break;
-    }
+    // Always serve the SPA container regardless of parameters
+    const htmlOutput = HtmlService.createTemplateFromFile('app').evaluate();
 
     return htmlOutput
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -53,7 +31,7 @@ function getSpreadsheet() {
 // Domain and security validation functions
 function isValidOronoEmail(email) {
   if (!email || typeof email !== 'string') return false;
-  return email.toLowerCase().endsWith('@oronoschools.org');
+  return email.toLowerCase().endsWith('@orono.k12.mn.us');
 }
 
 function isTeacherEmail(email) {
@@ -142,7 +120,7 @@ function authenticateStudent(email) {
   try {
     // Validate domain first
     if (!isValidOronoEmail(email)) {
-      return {success: false, message: 'Please use your Orono Schools email address (@oronoschools.org).'};
+      return {success: false, message: 'Please use your Orono Schools email address (@orono.k12.mn.us).'};
     }
 
     // Ensure this email is not a teacher
@@ -186,7 +164,7 @@ function authenticateTeacher(email) {
   try {
     // Validate domain first
     if (!isValidOronoEmail(email)) {
-      return {success: false, message: 'Please use your Orono Schools email address (@oronoschools.org).'};
+      return {success: false, message: 'Please use your Orono Schools email address (@orono.k12.mn.us).'};
     }
 
     const ss = getSpreadsheet();

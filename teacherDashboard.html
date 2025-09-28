@@ -92,7 +92,7 @@
                 .withSuccessHandler(function(result) {
                     if (result.success && result.userType === 'teacher') {
                         // Additional security check for Orono domain
-                        if (!result.userEmail.toLowerCase().endsWith('@oronoschools.org')) {
+                        if (!result.userEmail.toLowerCase().endsWith('@orono.k12.mn.us')) {
                             alert('Invalid session. Please log in with your Orono Schools email.');
                             window.location.href = '?page=teacherLogin';
                             return;

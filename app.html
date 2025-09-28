@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>English 9 Grammar Practice</title>
+    <?!= include('styles') ?>
+</head>
+<body>
+    <div class="container">
+        <!-- Main Landing Page View -->
+        <div id="landing-view" class="view">
+            <div class="login-container">
+                <h1>Orono Schools English 9</h1>
+                <h2>Grammar Practice Portal</h2>
+                <p class="subtitle">Choose your login type</p>
+
+                <div class="login-options">
+                    <div class="login-option">
+                        <h2>Students</h2>
+                        <p>Practice grammar exercises and track your progress</p>
+                        <p><em>Use your @orono.k12.mn.us email</em></p>
+                        <button class="btn btn-primary" onclick="showView('student-login')">
+                            Student Login
+                        </button>
+                    </div>
+
+                    <div class="login-option">
+                        <h2>Teachers</h2>
+                        <p>View student progress and manage assignments</p>
+                        <p><em>Use your @orono.k12.mn.us email</em></p>
+                        <button class="btn btn-secondary" onclick="showView('teacher-login')">
+                            Teacher Login
+                        </button>
+                    </div>
+                </div>
+
+                <div class="footer-info">
+                    <p><small>Access restricted to Orono Schools domain only</small></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Login View -->
+        <div id="student-login-view" class="view" style="display: none;">
+            <div class="login-container">
+                <h1>Student Login</h1>
+                <p class="subtitle">Enter your school email address</p>
+
+                <form id="studentLoginForm">
+                    <div class="form-group">
+                        <label for="studentEmail">Orono Schools Email Address:</label>
+                        <input type="email" id="studentEmail" name="studentEmail" required
+                               placeholder="your.name@orono.k12.mn.us" class="form-control"
+                               pattern=".*@orono\.k12\.mn\.us$"
+                               title="Please enter your Orono Schools email address">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+
+                    <div id="studentErrorMessage" class="error-message" style="display: none;"></div>
+                    <div id="studentLoadingMessage" class="loading-message" style="display: none;">Logging in...</div>
+                </form>
+
+                <div class="back-link">
+                    <a href="#" onclick="showView('landing')">&larr; Back to main login</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher Login View -->
+        <div id="teacher-login-view" class="view" style="display: none;">
+            <div class="login-container">
+                <h1>Teacher Login</h1>
+                <p class="subtitle">Enter your teacher email address</p>
+
+                <form id="teacherLoginForm">
+                    <div class="form-group">
+                        <label for="teacherEmail">Orono Schools Email Address:</label>
+                        <input type="email" id="teacherEmail" name="teacherEmail" required
+                               placeholder="teacher@orono.k12.mn.us" class="form-control"
+                               pattern=".*@orono\.k12\.mn\.us$"
+                               title="Please enter your Orono Schools email address">
+                    </div>
+
+                    <button type="submit" class="btn btn-secondary btn-block">Login</button>
+
+                    <div id="teacherErrorMessage" class="error-message" style="display: none;"></div>
+                    <div id="teacherLoadingMessage" class="loading-message" style="display: none;">Logging in...</div>
+                </form>
+
+                <div class="back-link">
+                    <a href="#" onclick="showView('landing')">&larr; Back to main login</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Dashboard View -->
+        <div id="student-dashboard-view" class="view" style="display: none;">
+            <nav class="nav-bar">
+                <h2>English 9 Grammar Practice</h2>
+                <div class="nav-links">
+                    <span id="studentName">Loading...</span>
+                    <button class="btn btn-outline" onclick="logout()">Logout</button>
+                </div>
+            </nav>
+
+            <div class="dashboard">
+                <div class="welcome-section">
+                    <h1>Welcome, <span id="welcomeName">Student</span>!</h1>
+                    <p>Choose a unit to practice grammar exercises</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Practice Grammar</h3>
+                        <p>Select a unit and topic to practice</p>
+
+                        <div class="form-group">
+                            <label for="unitSelect">Choose Unit:</label>
+                            <select id="unitSelect" class="form-control">
+                                <option value="">Loading units...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="topicSelect">Choose Topic (Optional):</label>
+                            <select id="topicSelect" class="form-control">
+                                <option value="">All topics</option>
+                            </select>
+                        </div>
+
+                        <button id="startPracticeBtn" class="btn btn-primary" onclick="startPractice()" disabled>
+                            Start Practice
+                        </button>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3>Your Progress</h3>
+                        <div id="progressContainer">
+                            <p>Loading your progress...</p>
+                        </div>
+                        <button class="btn btn-outline" onclick="viewDetailedProgress()">
+                            View Detailed Progress
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Modal -->
+            <div id="progressModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Detailed Progress</h3>
+                        <span class="close" onclick="closeProgressModal()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div id="detailedProgress">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher Dashboard View -->
+        <div id="teacher-dashboard-view" class="view" style="display: none;">
+            <nav class="nav-bar">
+                <h2>Teacher Dashboard</h2>
+                <div class="nav-links">
+                    <span id="teacherName">Loading...</span>
+                    <button class="btn btn-outline" onclick="logout()">Logout</button>
+                </div>
+            </nav>
+
+            <div class="dashboard">
+                <div class="welcome-section">
+                    <h1>Welcome, Teacher!</h1>
+                    <p>Monitor student progress and manage assignments</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Student Progress Overview</h3>
+                        <div class="form-group">
+                            <label for="studentFilter">Filter by Student:</label>
+                            <select id="studentFilter" class="form-control">
+                                <option value="">All Students</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="unitFilter">Filter by Unit:</label>
+                            <select id="unitFilter" class="form-control">
+                                <option value="">All Units</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="loadStudentProgress()">
+                            View Progress
+                        </button>
+                        <button class="btn btn-outline" onclick="exportProgress()">
+                            Export Data
+                        </button>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3>Class Statistics</h3>
+                        <div id="statsContainer">
+                            <p>Loading class statistics...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <h3>Student Progress Details</h3>
+                    <div id="progressTable">
+                        <p>Select filters and click "View Progress" to see student data.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Detail Modal -->
+            <div id="studentModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="studentModalTitle">Student Details</h3>
+                        <span class="close" onclick="closeStudentModal()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div id="studentDetails">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grammar Practice View -->
+        <div id="grammar-practice-view" class="view" style="display: none;">
+            <nav class="nav-bar">
+                <h2>Grammar Practice</h2>
+                <div class="nav-links">
+                    <span id="practiceStudentName">Loading...</span>
+                    <button class="btn btn-outline" onclick="showView('student-dashboard')">Back to Dashboard</button>
+                </div>
+            </nav>
+
+            <div class="practice-container">
+                <div class="practice-header">
+                    <h1 id="practiceTitle">Loading...</h1>
+                    <div class="practice-info">
+                        <span id="questionCounter">Question 0 of 0</span>
+                        <span id="scoreDisplay">Score: 0/0</span>
+                    </div>
+                </div>
+
+                <div id="practiceLoadingMessage" class="loading-message">
+                    Loading questions...
+                </div>
+
+                <div id="practiceContent" style="display: none;">
+                    <div class="question-container">
+                        <div class="question-header">
+                            <span id="questionType" class="question-type"></span>
+                            <span id="questionDifficulty" class="difficulty-badge"></span>
+                        </div>
+
+                        <div class="question-text">
+                            <h3 id="questionText">Question text will appear here</h3>
+                        </div>
+
+                        <div id="answerOptions" class="answer-options">
+                            <!-- Answer options will be populated here -->
+                        </div>
+
+                        <div class="question-actions">
+                            <button id="hintBtn" class="btn btn-outline" onclick="showHint()" style="display: none;">
+                                Show Hint
+                            </button>
+                            <button id="submitBtn" class="btn btn-primary" onclick="submitAnswer()" disabled>
+                                Submit Answer
+                            </button>
+                        </div>
+
+                        <div id="hintContainer" class="hint-container" style="display: none;">
+                            <p><strong>Hint:</strong> <span id="hintText"></span></p>
+                        </div>
+
+                        <div id="feedbackContainer" class="feedback-container" style="display: none;">
+                            <!-- Feedback will appear here -->
+                        </div>
+                    </div>
+
+                    <div class="practice-controls">
+                        <button id="nextBtn" class="btn btn-primary" onclick="nextQuestion()" style="display: none;">
+                            Next Question
+                        </button>
+                        <button id="finishBtn" class="btn btn-success" onclick="finishPractice()" style="display: none;">
+                            Finish Practice
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resultsContainer" style="display: none;">
+                    <div class="results-summary">
+                        <h2>Practice Complete!</h2>
+                        <div class="final-score">
+                            <h3 id="finalScore">Your Score: 0/0 (0%)</h3>
+                        </div>
+                        <div class="results-details" id="resultsDetails">
+                            <!-- Results breakdown will appear here -->
+                        </div>
+                        <div class="results-actions">
+                            <button class="btn btn-primary" onclick="showView('student-dashboard')">Back to Dashboard</button>
+                            <button class="btn btn-outline" onclick="restartPractice()">Practice Again</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentView = 'landing';
+        let availableUnits = [];
+        let allStudents = [];
+        let allProgress = [];
+        let practiceSession = null;
+
+        // View management
+        function showView(viewName) {
+            // Hide all views
+            const views = document.querySelectorAll('.view');
+            views.forEach(view => view.style.display = 'none');
+
+            // Show the selected view
+            const targetView = document.getElementById(viewName + '-view');
+            if (targetView) {
+                targetView.style.display = 'block';
+                currentView = viewName;
+
+                // Update browser history for back button support
+                history.pushState({view: viewName}, '', '#' + viewName);
+
+                // Initialize view-specific functionality
+                initializeView(viewName);
+            }
+        }
+
+        function initializeView(viewName) {
+            switch(viewName) {
+                case 'student-dashboard':
+                    initializeStudentDashboard();
+                    break;
+                case 'teacher-dashboard':
+                    initializeTeacherDashboard();
+                    break;
+                case 'grammar-practice':
+                    initializeGrammarPractice();
+                    break;
+            }
+        }
+
+        // Browser back button support
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.view) {
+                showView(event.state.view);
+            } else {
+                showView('landing');
+            }
+        });
+
+        // Initialize app on load
+        window.onload = function() {
+            // Check if user has existing session
+            checkUserSession();
+
+            // Setup form handlers
+            setupFormHandlers();
+        };
+
+        function checkUserSession() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        currentUser = result;
+                        if (result.userType === 'student') {
+                            showView('student-dashboard');
+                        } else if (result.userType === 'teacher') {
+                            showView('teacher-dashboard');
+                        }
+                    } else {
+                        showView('landing');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.log('No existing session found');
+                    showView('landing');
+                })
+                .getCurrentUser();
+        }
+
+        function setupFormHandlers() {
+            // Student login form
+            document.getElementById('studentLoginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('studentEmail').value.trim();
+                const errorDiv = document.getElementById('studentErrorMessage');
+                const loadingDiv = document.getElementById('studentLoadingMessage');
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+
+                if (!email) {
+                    showError('studentErrorMessage', 'Please enter your email address.');
+                    return;
+                }
+
+                if (!email.toLowerCase().endsWith('@orono.k12.mn.us')) {
+                    showError('studentErrorMessage', 'Please use your Orono Schools email address (@orono.k12.mn.us).');
+                    return;
+                }
+
+                errorDiv.style.display = 'none';
+                loadingDiv.style.display = 'block';
+                submitBtn.disabled = true;
+
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        loadingDiv.style.display = 'none';
+                        submitBtn.disabled = false;
+
+                        if (result.success) {
+                            currentUser = {
+                                success: true,
+                                userType: 'student',
+                                userEmail: email,
+                                studentInfo: result.studentInfo
+                            };
+                            showView('student-dashboard');
+                        } else {
+                            showError('studentErrorMessage', result.message || 'Login failed. Please check your email address.');
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        loadingDiv.style.display = 'none';
+                        submitBtn.disabled = false;
+                        showError('studentErrorMessage', 'Login error: ' + error.message);
+                    })
+                    .authenticateStudent(email);
+            });
+
+            // Teacher login form
+            document.getElementById('teacherLoginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('teacherEmail').value.trim();
+                const errorDiv = document.getElementById('teacherErrorMessage');
+                const loadingDiv = document.getElementById('teacherLoadingMessage');
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+
+                if (!email) {
+                    showError('teacherErrorMessage', 'Please enter your email address.');
+                    return;
+                }
+
+                if (!email.toLowerCase().endsWith('@orono.k12.mn.us')) {
+                    showError('teacherErrorMessage', 'Please use your Orono Schools email address (@orono.k12.mn.us).');
+                    return;
+                }
+
+                errorDiv.style.display = 'none';
+                loadingDiv.style.display = 'block';
+                submitBtn.disabled = true;
+
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        loadingDiv.style.display = 'none';
+                        submitBtn.disabled = false;
+
+                        if (result.success) {
+                            currentUser = {
+                                success: true,
+                                userType: 'teacher',
+                                userEmail: email
+                            };
+                            showView('teacher-dashboard');
+                        } else {
+                            showError('teacherErrorMessage', result.message || 'Login failed. Please check your email address.');
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        loadingDiv.style.display = 'none';
+                        submitBtn.disabled = false;
+                        showError('teacherErrorMessage', 'Login error: ' + error.message);
+                    })
+                    .authenticateTeacher(email);
+            });
+        }
+
+        function showError(elementId, message) {
+            const errorDiv = document.getElementById(elementId);
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function logout() {
+            google.script.run
+                .withSuccessHandler(function() {
+                    currentUser = null;
+                    showView('landing');
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Logout failed:', error);
+                    currentUser = null;
+                    showView('landing');
+                })
+                .logout();
+        }
+
+        // Student Dashboard Functions
+        function initializeStudentDashboard() {
+            if (!currentUser || currentUser.userType !== 'student') {
+                showView('landing');
+                return;
+            }
+
+            document.getElementById('studentName').textContent = currentUser.studentInfo.firstName + ' ' + currentUser.studentInfo.lastName;
+            document.getElementById('welcomeName').textContent = currentUser.studentInfo.firstName;
+
+            loadUnits();
+            loadStudentProgress();
+        }
+
+        function loadUnits() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        availableUnits = result.units;
+                        const unitSelect = document.getElementById('unitSelect');
+                        unitSelect.innerHTML = '<option value="">Select a unit</option>';
+
+                        result.units.forEach(unit => {
+                            const option = document.createElement('option');
+                            option.value = unit;
+                            option.textContent = 'Unit ' + unit;
+                            unitSelect.appendChild(option);
+                        });
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load units:', error);
+                })
+                .getAvailableUnits();
+        }
+
+        function loadStudentProgress() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        displayProgressSummary(result.progress);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load progress:', error);
+                    document.getElementById('progressContainer').innerHTML = '<p class="error">Failed to load progress</p>';
+                })
+                .getStudentProgress();
+        }
+
+        function displayProgressSummary(progress) {
+            const container = document.getElementById('progressContainer');
+
+            if (progress.length === 0) {
+                container.innerHTML = '<p>No practice sessions completed yet. Start practicing to see your progress!</p>';
+                return;
+            }
+
+            const unitStats = {};
+            progress.forEach(session => {
+                if (!unitStats[session.unit]) {
+                    unitStats[session.unit] = { total: 0, sessions: 0, bestScore: 0 };
+                }
+                unitStats[session.unit].total += session.percentage;
+                unitStats[session.unit].sessions++;
+                unitStats[session.unit].bestScore = Math.max(unitStats[session.unit].bestScore, session.percentage);
+            });
+
+            let html = '<div class="progress-summary">';
+            html += '<h4>Recent Activity</h4>';
+
+            progress.slice(0, 3).forEach(session => {
+                html += `<div class="progress-item">
+                    <span>Unit ${session.unit}</span>
+                    <span>${session.score}/${session.total} (${session.percentage}%)</span>
+                </div>`;
+            });
+
+            html += '<h4>Unit Averages</h4>';
+            Object.keys(unitStats).forEach(unit => {
+                const avg = Math.round(unitStats[unit].total / unitStats[unit].sessions);
+                html += `<div class="progress-item">
+                    <span>Unit ${unit}</span>
+                    <span>Avg: ${avg}% (Best: ${unitStats[unit].bestScore}%)</span>
+                </div>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Setup unit selection handler
+        document.getElementById('unitSelect').addEventListener('change', function() {
+            const selectedUnit = this.value;
+            const startBtn = document.getElementById('startPracticeBtn');
+
+            if (selectedUnit) {
+                startBtn.disabled = false;
+                loadTopicsForUnit(selectedUnit);
+            } else {
+                startBtn.disabled = true;
+                document.getElementById('topicSelect').innerHTML = '<option value="">All topics</option>';
+            }
+        });
+
+        function loadTopicsForUnit(unit) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        const topicSelect = document.getElementById('topicSelect');
+                        topicSelect.innerHTML = '<option value="">All topics</option>';
+
+                        result.topics.forEach(topic => {
+                            const option = document.createElement('option');
+                            option.value = topic;
+                            option.textContent = topic;
+                            topicSelect.appendChild(option);
+                        });
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load topics:', error);
+                })
+                .getTopicsForUnit(unit);
+        }
+
+        function startPractice() {
+            const unit = document.getElementById('unitSelect').value;
+            const topic = document.getElementById('topicSelect').value;
+
+            if (!unit) {
+                alert('Please select a unit first.');
+                return;
+            }
+
+            practiceSession = {
+                unit: unit,
+                topic: topic || null
+            };
+
+            showView('grammar-practice');
+        }
+
+        function viewDetailedProgress() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        displayDetailedProgress(result.progress);
+                        document.getElementById('progressModal').style.display = 'block';
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load detailed progress:', error);
+                })
+                .getStudentProgress();
+        }
+
+        function displayDetailedProgress(progress) {
+            const container = document.getElementById('detailedProgress');
+
+            if (progress.length === 0) {
+                container.innerHTML = '<p>No practice sessions found.</p>';
+                return;
+            }
+
+            let html = '<div class="detailed-progress">';
+            html += '<table class="progress-table">';
+            html += '<thead><tr><th>Date</th><th>Unit</th><th>Score</th><th>Percentage</th></tr></thead>';
+            html += '<tbody>';
+
+            progress.forEach(session => {
+                const date = new Date(session.timestamp).toLocaleDateString();
+                html += `<tr>
+                    <td>${date}</td>
+                    <td>Unit ${session.unit}</td>
+                    <td>${session.score}/${session.total}</td>
+                    <td>${session.percentage}%</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function closeProgressModal() {
+            document.getElementById('progressModal').style.display = 'none';
+        }
+
+        // Teacher Dashboard Functions
+        function initializeTeacherDashboard() {
+            if (!currentUser || currentUser.userType !== 'teacher') {
+                showView('landing');
+                return;
+            }
+
+            document.getElementById('teacherName').textContent = currentUser.userEmail;
+            loadStudentList();
+            loadUnitsForTeacher();
+            loadClassStatistics();
+        }
+
+        function loadStudentList() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        allStudents = result.students;
+                        populateStudentFilter(result.students);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load students:', error);
+                })
+                .getTeacherStudents();
+        }
+
+        function populateStudentFilter(students) {
+            const select = document.getElementById('studentFilter');
+            select.innerHTML = '<option value="">All Students</option>';
+
+            students.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.email;
+                option.textContent = `${student.firstName} ${student.lastName}`;
+                select.appendChild(option);
+            });
+        }
+
+        function loadUnitsForTeacher() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        const unitSelect = document.getElementById('unitFilter');
+                        unitSelect.innerHTML = '<option value="">All Units</option>';
+
+                        result.units.forEach(unit => {
+                            const option = document.createElement('option');
+                            option.value = unit;
+                            option.textContent = 'Unit ' + unit;
+                            unitSelect.appendChild(option);
+                        });
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load units:', error);
+                })
+                .getAvailableUnits();
+        }
+
+        function loadClassStatistics() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        displayClassStatistics(result.stats);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load class statistics:', error);
+                    document.getElementById('statsContainer').innerHTML = '<p class="error">Failed to load statistics</p>';
+                })
+                .getClassStatistics();
+        }
+
+        function displayClassStatistics(stats) {
+            const container = document.getElementById('statsContainer');
+
+            let html = '<div class="stats-grid">';
+            html += `<div class="stat-item">
+                <h4>${stats.totalStudents}</h4>
+                <p>Total Students</p>
+            </div>`;
+            html += `<div class="stat-item">
+                <h4>${stats.totalSessions}</h4>
+                <p>Practice Sessions</p>
+            </div>`;
+            html += `<div class="stat-item">
+                <h4>${stats.averageScore}%</h4>
+                <p>Class Average</p>
+            </div>`;
+            html += `<div class="stat-item">
+                <h4>${stats.activeToday}</h4>
+                <p>Active Today</p>
+            </div>`;
+            html += '</div>';
+
+            if (stats.unitBreakdown && stats.unitBreakdown.length > 0) {
+                html += '<h4>Unit Performance</h4>';
+                html += '<div class="unit-stats">';
+                stats.unitBreakdown.forEach(unit => {
+                    html += `<div class="unit-stat">
+                        <span>Unit ${unit.unit}</span>
+                        <span>${unit.averageScore}% avg (${unit.sessions} sessions)</span>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function loadStudentProgress() {
+            const studentEmail = document.getElementById('studentFilter').value;
+            const unit = document.getElementById('unitFilter').value;
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        allProgress = result.progress;
+                        displayProgressTable(result.progress);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load progress:', error);
+                    document.getElementById('progressTable').innerHTML = '<p class="error">Failed to load progress data</p>';
+                })
+                .getFilteredProgress(studentEmail, unit);
+        }
+
+        function displayProgressTable(progress) {
+            const container = document.getElementById('progressTable');
+
+            if (progress.length === 0) {
+                container.innerHTML = '<p>No progress data found for the selected filters.</p>';
+                return;
+            }
+
+            let html = '<table class="progress-table">';
+            html += '<thead><tr>';
+            html += '<th>Date</th>';
+            html += '<th>Student</th>';
+            html += '<th>Unit</th>';
+            html += '<th>Score</th>';
+            html += '<th>Percentage</th>';
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+
+            progress.forEach(session => {
+                const date = new Date(session.timestamp).toLocaleDateString();
+                const percentage = session.percentage;
+                const percentageClass = percentage >= 80 ? 'high-score' : percentage >= 60 ? 'medium-score' : 'low-score';
+
+                html += `<tr>
+                    <td>${date}</td>
+                    <td>${session.studentName}</td>
+                    <td>Unit ${session.unit}</td>
+                    <td>${session.score}/${session.total}</td>
+                    <td class="${percentageClass}">${percentage}%</td>
+                    <td>
+                        <button class="btn btn-small" onclick="viewStudentDetails('${session.studentEmail}')">
+                            View Details
+                        </button>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function viewStudentDetails(studentEmail) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        displayStudentDetails(result.progress, studentEmail);
+                        document.getElementById('studentModal').style.display = 'block';
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Failed to load student details:', error);
+                })
+                .getStudentProgress(studentEmail);
+        }
+
+        function displayStudentDetails(progress, studentEmail) {
+            const student = allStudents.find(s => s.email === studentEmail);
+            const studentName = student ? `${student.firstName} ${student.lastName}` : studentEmail;
+
+            document.getElementById('studentModalTitle').textContent = `${studentName} - Progress Details`;
+
+            const container = document.getElementById('studentDetails');
+
+            if (progress.length === 0) {
+                container.innerHTML = '<p>No practice sessions found for this student.</p>';
+                return;
+            }
+
+            // Calculate statistics
+            const totalSessions = progress.length;
+            const averageScore = Math.round(progress.reduce((sum, p) => sum + p.percentage, 0) / totalSessions);
+            const bestScore = Math.max(...progress.map(p => p.percentage));
+            const recentSessions = progress.slice(0, 5);
+
+            let html = `
+                <div class="student-summary">
+                    <h4>Summary Statistics</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <h5>${totalSessions}</h5>
+                            <p>Total Sessions</p>
+                        </div>
+                        <div class="stat-item">
+                            <h5>${averageScore}%</h5>
+                            <p>Average Score</p>
+                        </div>
+                        <div class="stat-item">
+                            <h5>${bestScore}%</h5>
+                            <p>Best Score</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-sessions">
+                    <h4>Recent Sessions</h4>
+                    <table class="progress-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Unit</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            recentSessions.forEach(session => {
+                const date = new Date(session.timestamp).toLocaleDateString();
+                const percentageClass = session.percentage >= 80 ? 'high-score' :
+                                      session.percentage >= 60 ? 'medium-score' : 'low-score';
+
+                html += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>Unit ${session.unit}</td>
+                        <td>${session.score}/${session.total}</td>
+                        <td class="${percentageClass}">${session.percentage}%</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table></div>';
+
+            // Unit breakdown
+            const unitStats = {};
+            progress.forEach(session => {
+                if (!unitStats[session.unit]) {
+                    unitStats[session.unit] = { total: 0, count: 0, best: 0 };
+                }
+                unitStats[session.unit].total += session.percentage;
+                unitStats[session.unit].count++;
+                unitStats[session.unit].best = Math.max(unitStats[session.unit].best, session.percentage);
+            });
+
+            html += '<div class="unit-breakdown"><h4>Performance by Unit</h4>';
+            Object.keys(unitStats).forEach(unit => {
+                const avg = Math.round(unitStats[unit].total / unitStats[unit].count);
+                html += `
+                    <div class="unit-performance">
+                        <span>Unit ${unit}</span>
+                        <span>Avg: ${avg}% | Best: ${unitStats[unit].best}% | Sessions: ${unitStats[unit].count}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        function exportProgress() {
+            const studentEmail = document.getElementById('studentFilter').value;
+            const unit = document.getElementById('unitFilter').value;
+
+            // Create CSV content
+            let csv = 'Date,Student Name,Student Email,Unit,Score,Total,Percentage\n';
+
+            allProgress.forEach(session => {
+                const date = new Date(session.timestamp).toLocaleDateString();
+                csv += `${date},"${session.studentName}",${session.studentEmail},Unit ${session.unit},${session.score},${session.total},${session.percentage}%\n`;
+            });
+
+            // Download CSV
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `student_progress_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function closeStudentModal() {
+            document.getElementById('studentModal').style.display = 'none';
+        }
+
+        // Grammar Practice Functions
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedAnswers = [];
+
+        function initializeGrammarPractice() {
+            if (!practiceSession) {
+                showView('student-dashboard');
+                return;
+            }
+
+            if (!currentUser || currentUser.userType !== 'student') {
+                showView('landing');
+                return;
+            }
+
+            document.getElementById('practiceStudentName').textContent = currentUser.studentInfo.firstName + ' ' + currentUser.studentInfo.lastName;
+
+            let title = `Unit ${practiceSession.unit} Practice`;
+            if (practiceSession.topic) {
+                title += ` - ${practiceSession.topic}`;
+            }
+            document.getElementById('practiceTitle').textContent = title;
+
+            loadPracticeQuestions();
+        }
+
+        function loadPracticeQuestions() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success && result.questions.length > 0) {
+                        questions = shuffleArray(result.questions);
+                        selectedAnswers = new Array(questions.length);
+                        score = 0;
+                        currentQuestionIndex = 0;
+                        updateQuestionCounter();
+                        updateScoreDisplay();
+                        document.getElementById('practiceLoadingMessage').style.display = 'none';
+                        document.getElementById('practiceContent').style.display = 'block';
+                        showQuestion(0);
+                    } else {
+                        showPracticeError('No questions found for this unit/topic combination.');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    showPracticeError('Failed to load questions: ' + error.message);
+                })
+                .getGrammarQuestions(practiceSession.unit, practiceSession.topic);
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function showQuestion(index) {
+            if (index >= questions.length) {
+                finishPractice();
+                return;
+            }
+
+            currentQuestionIndex = index;
+            const question = questions[index];
+
+            document.getElementById('questionType').textContent = question.questionType;
+            document.getElementById('questionDifficulty').textContent = question.difficultyLevel;
+            document.getElementById('questionText').textContent = question.question;
+
+            // Show hint button if hint exists
+            const hintBtn = document.getElementById('hintBtn');
+            if (question.hint && question.hint.trim()) {
+                hintBtn.style.display = 'inline-block';
+                document.getElementById('hintText').textContent = question.hint;
+            } else {
+                hintBtn.style.display = 'none';
+            }
+
+            // Hide feedback and reset UI
+            document.getElementById('feedbackContainer').style.display = 'none';
+            document.getElementById('hintContainer').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('finishBtn').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('submitBtn').disabled = true;
+
+            showAnswerOptions(question);
+            updateQuestionCounter();
+        }
+
+        function showAnswerOptions(question) {
+            const container = document.getElementById('answerOptions');
+            container.innerHTML = '';
+
+            if (question.questionType === 'Multiple Choice') {
+                // Collect all answer options
+                const options = [question.answer];
+                if (question.incorrect1) options.push(question.incorrect1);
+                if (question.incorrect2) options.push(question.incorrect2);
+                if (question.incorrect3) options.push(question.incorrect3);
+                if (question.incorrect4) options.push(question.incorrect4);
+
+                // Shuffle options
+                const shuffledOptions = shuffleArray(options);
+
+                shuffledOptions.forEach((option, index) => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'answer-option';
+                    optionDiv.innerHTML = `
+                        <input type="radio" id="option${index}" name="answer" value="${option}">
+                        <label for="option${index}">${option}</label>
+                    `;
+                    container.appendChild(optionDiv);
+                });
+
+                // Add event listeners
+                container.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        document.getElementById('submitBtn').disabled = false;
+                    });
+                });
+            } else {
+                // Free text input for other question types
+                const inputDiv = document.createElement('div');
+                inputDiv.className = 'answer-input';
+                inputDiv.innerHTML = `
+                    <textarea id="freeTextAnswer" rows="3" placeholder="Enter your answer here..."
+                              class="form-control"></textarea>
+                `;
+                container.appendChild(inputDiv);
+
+                document.getElementById('freeTextAnswer').addEventListener('input', function() {
+                    document.getElementById('submitBtn').disabled = this.value.trim() === '';
+                });
+            }
+        }
+
+        function showHint() {
+            document.getElementById('hintContainer').style.display = 'block';
+        }
+
+        function submitAnswer() {
+            const question = questions[currentQuestionIndex];
+            let userAnswer = '';
+
+            if (question.questionType === 'Multiple Choice') {
+                const selected = document.querySelector('input[name="answer"]:checked');
+                userAnswer = selected ? selected.value : '';
+            } else {
+                userAnswer = document.getElementById('freeTextAnswer').value.trim();
+            }
+
+            if (!userAnswer) {
+                alert('Please select or enter an answer.');
+                return;
+            }
+
+            selectedAnswers[currentQuestionIndex] = userAnswer;
+            const isCorrect = userAnswer.toLowerCase() === question.answer.toLowerCase();
+
+            if (isCorrect) {
+                score++;
+            }
+
+            showFeedback(isCorrect, question.answer, userAnswer);
+            updateScoreDisplay();
+
+            // Hide submit button, show next/finish button
+            document.getElementById('submitBtn').style.display = 'none';
+            if (currentQuestionIndex < questions.length - 1) {
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            } else {
+                document.getElementById('finishBtn').style.display = 'inline-block';
+            }
+
+            // Disable answer options
+            document.querySelectorAll('#answerOptions input').forEach(input => {
+                input.disabled = true;
+            });
+        }
+
+        function showFeedback(isCorrect, correctAnswer, userAnswer) {
+            const container = document.getElementById('feedbackContainer');
+            container.innerHTML = `
+                <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+                    <h4>${isCorrect ? 'Correct!' : 'Incorrect'}</h4>
+                    ${!isCorrect ? `<p><strong>Correct answer:</strong> ${correctAnswer}</p>` : ''}
+                    ${!isCorrect ? `<p><strong>Your answer:</strong> ${userAnswer}</p>` : ''}
+                </div>
+            `;
+            container.style.display = 'block';
+        }
+
+        function nextQuestion() {
+            showQuestion(currentQuestionIndex + 1);
+        }
+
+        function updateQuestionCounter() {
+            document.getElementById('questionCounter').textContent =
+                `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('scoreDisplay').textContent =
+                `Score: ${score}/${questions.length}`;
+        }
+
+        function finishPractice() {
+            const percentage = Math.round((score / questions.length) * 100);
+
+            // Record score
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (!result.success) {
+                        console.error('Failed to record score:', result.message);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error recording score:', error);
+                })
+                .recordStudentScore(null, practiceSession.unit, score, questions.length);
+
+            // Show results
+            document.getElementById('practiceContent').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'block';
+
+            document.getElementById('finalScore').textContent =
+                `Your Score: ${score}/${questions.length} (${percentage}%)`;
+
+            showResultsBreakdown();
+        }
+
+        function showResultsBreakdown() {
+            const container = document.getElementById('resultsDetails');
+            let html = '<div class="results-breakdown">';
+
+            questions.forEach((question, index) => {
+                const userAnswer = selectedAnswers[index] || 'No answer';
+                const isCorrect = userAnswer.toLowerCase() === question.answer.toLowerCase();
+
+                html += `
+                    <div class="result-item ${isCorrect ? 'correct' : 'incorrect'}">
+                        <div class="result-question">${question.question}</div>
+                        <div class="result-answers">
+                            <span class="correct-answer">Correct: ${question.answer}</span>
+                            ${!isCorrect ? `<span class="user-answer">Your answer: ${userAnswer}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function restartPractice() {
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedAnswers = [];
+            questions = shuffleArray(questions);
+            document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('practiceContent').style.display = 'block';
+            updateScoreDisplay();
+            showQuestion(0);
+        }
+
+        function showPracticeError(message) {
+            document.getElementById('practiceLoadingMessage').innerHTML =
+                `<div class="error-message">${message}</div>`;
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const progressModal = document.getElementById('progressModal');
+            const studentModal = document.getElementById('studentModal');
+
+            if (event.target === progressModal) {
+                closeProgressModal();
+            }
+            if (event.target === studentModal) {
+                closeStudentModal();
+            }
+        }
+    </script>
+</body>
+</html>
