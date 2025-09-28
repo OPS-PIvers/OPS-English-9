@@ -9,7 +9,7 @@ function doGet(e) {
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
   } catch (error) {
-    Logger.log('Error in doGet: ' + error.toString());
+    // Logger.log('Error in doGet: ' + error.toString());
     return HtmlService.createHtmlOutput('<h1>Error loading page</h1><p>' + error.toString() + '</p>');
   }
 }
@@ -47,7 +47,7 @@ function isTeacherEmail(email) {
     }
     return false;
   } catch (error) {
-    Logger.log('Error in isTeacherEmail: ' + error.toString());
+    // Logger.log('Error in isTeacherEmail: ' + error.toString());
     return false;
   }
 }
@@ -115,34 +115,55 @@ function setupSpreadsheet() {
   }
 }
 
-// Authentication functions
-function authenticateStudent(email) {
+// Unified authentication function
+function autoAuthenticate() {
   try {
+    // Get email from OAuth session
+    const email = Session.getActiveUser().getEmail();
+
+    if (!email) {
+      return {success: false, message: 'Unable to get user email. Please sign in to your Google account.'};
+    }
+
     // Validate domain first
     if (!isValidOronoEmail(email)) {
       return {success: false, message: 'Please use your Orono Schools email address (@orono.k12.mn.us).'};
     }
 
-    // Ensure this email is not a teacher
-    if (isTeacherEmail(email)) {
-      return {success: false, message: 'Teacher accounts cannot access the student interface. Please use the teacher login.'};
+    const ss = getSpreadsheet();
+
+    // Check if user is a teacher first
+    const teacherSheet = ss.getSheetByName('Teacher Emails');
+    const teacherData = teacherSheet.getDataRange().getValues();
+
+    for (let i = 1; i < teacherData.length; i++) {
+      if (teacherData[i][0] === email) {
+        // Store teacher session
+        PropertiesService.getUserProperties().setProperties({
+          'userType': 'teacher',
+          'userEmail': email,
+          'sessionTimestamp': new Date().getTime().toString()
+        });
+
+        return {success: true, userType: 'teacher', userEmail: email};
+      }
     }
 
-    const ss = getSpreadsheet();
+    // Check if user is a student
     const rosterSheet = ss.getSheetByName('Student Roster');
-    const data = rosterSheet.getDataRange().getValues();
+    const studentData = rosterSheet.getDataRange().getValues();
 
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === email) { // Column A: Student Email
+    for (let i = 1; i < studentData.length; i++) {
+      if (studentData[i][0] === email) {
         const studentInfo = {
-          email: data[i][0],
-          lastName: data[i][1],
-          firstName: data[i][2],
-          teacher: data[i][3],
-          period: data[i][4]
+          email: studentData[i][0],
+          lastName: studentData[i][1],
+          firstName: studentData[i][2],
+          teacher: studentData[i][3],
+          period: studentData[i][4]
         };
 
-        // Store session with additional security
+        // Store student session
         PropertiesService.getUserProperties().setProperties({
           'userType': 'student',
           'userEmail': email,
@@ -150,43 +171,39 @@ function authenticateStudent(email) {
           'sessionTimestamp': new Date().getTime().toString()
         });
 
-        return {success: true, studentInfo: studentInfo};
+        return {success: true, userType: 'student', userEmail: email, studentInfo: studentInfo};
       }
     }
-    return {success: false, message: 'Student email not found in roster. Please contact your teacher if you believe this is an error.'};
+
+    // User not found in either list
+    return {success: false, message: 'Your email address is not authorized to access this application. Please contact your teacher or administrator if you believe this is an error.'};
+
   } catch (error) {
-    Logger.log('Error in authenticateStudent: ' + error.toString());
+    // Logger.log('Error in autoAuthenticate: ' + error.toString());
     return {success: false, message: 'Authentication error: ' + error.toString()};
   }
 }
 
-function authenticateTeacher(email) {
-  try {
-    // Validate domain first
-    if (!isValidOronoEmail(email)) {
-      return {success: false, message: 'Please use your Orono Schools email address (@orono.k12.mn.us).'};
-    }
+// Legacy functions kept for backward compatibility (can be removed later)
+function authenticateStudent() {
+  const result = autoAuthenticate();
+  if (result.success && result.userType === 'student') {
+    return {success: true, studentInfo: result.studentInfo};
+  } else if (result.success && result.userType === 'teacher') {
+    return {success: false, message: 'Teacher accounts cannot access the student interface. Please use the teacher dashboard.'};
+  } else {
+    return result;
+  }
+}
 
-    const ss = getSpreadsheet();
-    const teacherSheet = ss.getSheetByName('Teacher Emails');
-    const data = teacherSheet.getDataRange().getValues();
-
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === email) { // Column A: Teacher Email
-        // Store session with additional security
-        PropertiesService.getUserProperties().setProperties({
-          'userType': 'teacher',
-          'userEmail': email,
-          'sessionTimestamp': new Date().getTime().toString()
-        });
-
-        return {success: true, teacherEmail: email};
-      }
-    }
-    return {success: false, message: 'Teacher email not found. Please contact the administrator if you believe this is an error.'};
-  } catch (error) {
-    Logger.log('Error in authenticateTeacher: ' + error.toString());
-    return {success: false, message: 'Authentication error: ' + error.toString()};
+function authenticateTeacher() {
+  const result = autoAuthenticate();
+  if (result.success && result.userType === 'teacher') {
+    return {success: true, teacherEmail: result.userEmail};
+  } else if (result.success && result.userType === 'student') {
+    return {success: false, message: 'Student accounts cannot access the teacher interface. Please use the student dashboard.'};
+  } else {
+    return result;
   }
 }
 
@@ -257,7 +274,7 @@ function getGrammarQuestions(unit, topic) {
 
     return {success: true, questions: questions};
   } catch (error) {
-    Logger.log('Error in getGrammarQuestions: ' + error.toString());
+    // Logger.log('Error in getGrammarQuestions: ' + error.toString());
     return {success: false, message: 'Error retrieving questions: ' + error.toString()};
   }
 }
@@ -283,7 +300,7 @@ function getAvailableUnits() {
 
     return {success: true, units: Array.from(units).sort()};
   } catch (error) {
-    Logger.log('Error in getAvailableUnits: ' + error.toString());
+    // Logger.log('Error in getAvailableUnits: ' + error.toString());
     return {success: false, message: 'Error retrieving units: ' + error.toString()};
   }
 }
@@ -309,13 +326,13 @@ function getTopicsForUnit(unit) {
 
     return {success: true, topics: Array.from(topics)};
   } catch (error) {
-    Logger.log('Error in getTopicsForUnit: ' + error.toString());
+    // Logger.log('Error in getTopicsForUnit: ' + error.toString());
     return {success: false, message: 'Error retrieving topics: ' + error.toString()};
   }
 }
 
 // Student progress functions
-function recordStudentScore(studentEmail, unit, score, total) {
+function recordStudentScore(unit, score, total) {
   try {
     // Validate student session
     const sessionCheck = validateSession('student');
@@ -327,6 +344,7 @@ function recordStudentScore(studentEmail, unit, score, total) {
     const userInfo = sessionCheck.userInfo;
 
     const studentInfo = userInfo.studentInfo;
+    const studentEmail = userInfo.userEmail;
     const teacherName = studentInfo.teacher;
 
     // Find the appropriate proficiency sheet
@@ -362,7 +380,7 @@ function recordStudentScore(studentEmail, unit, score, total) {
 
     return {success: true, message: 'Score recorded successfully'};
   } catch (error) {
-    Logger.log('Error in recordStudentScore: ' + error.toString());
+    // Logger.log('Error in recordStudentScore: ' + error.toString());
     return {success: false, message: 'Error recording score: ' + error.toString()};
   }
 }
@@ -372,44 +390,148 @@ function getStudentProgress(studentEmail) {
     const ss = getSpreadsheet();
     const userInfo = getCurrentUser();
 
-    if (!userInfo.success) {
+    if (!userInfo || !userInfo.success) {
+      // Logger.log('getStudentProgress: Invalid user session - ' + JSON.stringify(userInfo));
       return {success: false, message: 'Invalid session'};
     }
 
     // If teacher is requesting, use provided email; if student, use their own email
     const targetEmail = (userInfo.userType === 'teacher') ? studentEmail : userInfo.userEmail;
 
+    if (!targetEmail) {
+      // Logger.log('getStudentProgress: No target email found - userInfo: ' + JSON.stringify(userInfo));
+      return {success: false, message: 'Unable to determine target email'};
+    }
+
+    // Logger.log('getStudentProgress: Searching for progress for email: ' + targetEmail + ', userType: ' + userInfo.userType);
+
     const sheets = ss.getSheets();
     const progressData = [];
 
-    // Search all proficiency sheets
-    for (let sheet of sheets) {
-      const name = sheet.getName();
-      if (name.includes('Student Proficiency')) {
-        const data = sheet.getDataRange().getValues();
+    if (userInfo.userType === 'student') {
+      // For students: target the specific teacher's proficiency sheet
+      const studentInfo = userInfo.studentInfo;
+      if (!studentInfo || !studentInfo.teacher) {
+        // Logger.log('getStudentProgress: No teacher info found for student - studentInfo: ' + JSON.stringify(studentInfo));
+        return {success: false, message: 'Student teacher information not found'};
+      }
 
-        for (let i = 1; i < data.length; i++) {
-          if (data[i][1] === targetEmail) { // Column B: Student email
-            progressData.push({
-              timestamp: data[i][0],
-              studentEmail: data[i][1],
-              studentName: data[i][2],
-              unit: data[i][3],
-              score: data[i][4],
-              total: data[i][5],
-              percentage: data[i][6]
-            });
+      const teacherName = studentInfo.teacher;
+      // Logger.log('getStudentProgress: Looking for sheet for teacher: ' + teacherName);
+
+      // Find the specific teacher's proficiency sheet
+      let targetSheet = null;
+      for (let sheet of sheets) {
+        const name = sheet.getName();
+        // Logger.log('getStudentProgress: Checking sheet: ' + name);
+        if (name.includes('Student Proficiency') && name.includes(teacherName)) {
+          targetSheet = sheet;
+          // Logger.log('getStudentProgress: Found target sheet: ' + name);
+          break;
+        }
+      }
+
+      if (!targetSheet) {
+        // Logger.log('getStudentProgress: Proficiency sheet not found for teacher: ' + teacherName);
+        return {success: false, message: 'Proficiency sheet not found for teacher: ' + teacherName};
+      }
+
+      // Search the specific teacher's sheet
+      const data = targetSheet.getDataRange().getValues();
+      // Logger.log('getStudentProgress: Sheet has ' + data.length + ' rows');
+
+      for (let i = 1; i < data.length; i++) {
+        // Logger.log('getStudentProgress: Row ' + i + ' email: "' + data[i][1] + '" vs target: "' + targetEmail + '"');
+        if (data[i][1] === targetEmail) { // Column B: Student email
+          // Convert timestamp to string to avoid serialization issues
+          const timestampString = data[i][0] instanceof Date ? data[i][0].toISOString() : data[i][0].toString();
+
+          progressData.push({
+            timestamp: timestampString,
+            studentEmail: data[i][1],
+            studentName: data[i][2],
+            unit: data[i][3],
+            score: data[i][4],
+            total: data[i][5],
+            percentage: data[i][6]
+          });
+          // Logger.log('getStudentProgress: Added progress record: ' + JSON.stringify(progressData[progressData.length - 1]));
+        }
+      }
+    } else {
+      // For teachers: search all proficiency sheets (existing logic)
+      // Logger.log('getStudentProgress: Teacher mode - searching all proficiency sheets');
+      for (let sheet of sheets) {
+        const name = sheet.getName();
+        if (name.includes('Student Proficiency')) {
+          // Logger.log('getStudentProgress: Searching sheet: ' + name);
+          const data = sheet.getDataRange().getValues();
+
+          for (let i = 1; i < data.length; i++) {
+            if (data[i][1] === targetEmail) { // Column B: Student email
+              // Convert timestamp to string to avoid serialization issues
+              const timestampString = data[i][0] instanceof Date ? data[i][0].toISOString() : data[i][0].toString();
+
+              progressData.push({
+                timestamp: timestampString,
+                studentEmail: data[i][1],
+                studentName: data[i][2],
+                unit: data[i][3],
+                score: data[i][4],
+                total: data[i][5],
+                percentage: data[i][6]
+              });
+            }
           }
         }
       }
     }
 
     // Sort by timestamp, most recent first
-    progressData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Logger.log('getStudentProgress: About to sort ' + progressData.length + ' records');
+    try {
+      progressData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      // Logger.log('getStudentProgress: Sorting completed successfully');
+    } catch (sortError) {
+      // Logger.log('getStudentProgress: Sorting failed: ' + sortError.toString());
+      // Continue without sorting rather than failing completely
+    }
 
-    return {success: true, progress: progressData};
+    // Logger.log('getStudentProgress: Found ' + progressData.length + ' progress records for ' + targetEmail);
+
+    // Prepare response object
+    const response = {success: true, progress: progressData};
+    // Logger.log('getStudentProgress: Prepared response object with ' + progressData.length + ' records');
+    // Logger.log('getStudentProgress: Response structure: ' + JSON.stringify({
+    //   success: response.success,
+    //   progressCount: response.progress.length,
+    //   firstRecord: response.progress.length > 0 ? 'present' : 'none'
+    // }));
+
+    // Logger.log('getStudentProgress: About to return response');
+
+    // Try to return the response and catch any serialization errors
+    try {
+      // Logger.log('getStudentProgress: Attempting to return response object');
+      const result = response;
+      // Logger.log('getStudentProgress: Response object prepared successfully');
+      return result;
+    } catch (returnError) {
+      // Logger.log('getStudentProgress: Failed to return response: ' + returnError.toString());
+      // Logger.log('getStudentProgress: Return error details: ' + JSON.stringify({
+      //   error: returnError.name,
+      //   message: returnError.message,
+      //   responseSize: JSON.stringify(response).length
+      // }));
+      return {success: false, message: 'Error returning response: ' + returnError.toString()};
+    }
   } catch (error) {
-    Logger.log('Error in getStudentProgress: ' + error.toString());
+    // Logger.log('Error in getStudentProgress (main catch): ' + error.toString());
+    // Logger.log('getStudentProgress: Main error details: ' + JSON.stringify({
+    //   error: error.name,
+    //   message: error.message,
+    //   stack: error.stack
+    // }));
     return {success: false, message: 'Error retrieving progress: ' + error.toString()};
   }
 }
@@ -450,7 +572,7 @@ function getTeacherStudents() {
 
     return {success: true, students: students};
   } catch (error) {
-    Logger.log('Error in getTeacherStudents: ' + error.toString());
+    // Logger.log('Error in getTeacherStudents: ' + error.toString());
     return {success: false, message: 'Error retrieving students: ' + error.toString()};
   }
 }
@@ -538,7 +660,7 @@ function getClassStatistics() {
       }
     };
   } catch (error) {
-    Logger.log('Error in getClassStatistics: ' + error.toString());
+    // Logger.log('Error in getClassStatistics: ' + error.toString());
     return {success: false, message: 'Error calculating statistics: ' + error.toString()};
   }
 }
@@ -595,7 +717,7 @@ function getFilteredProgress(studentEmail, unit) {
 
     return {success: true, progress: progressData};
   } catch (error) {
-    Logger.log('Error in getFilteredProgress: ' + error.toString());
+    // Logger.log('Error in getFilteredProgress: ' + error.toString());
     return {success: false, message: 'Error retrieving filtered progress: ' + error.toString()};
   }
 }
