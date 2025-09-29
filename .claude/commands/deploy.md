@@ -1,28 +1,14 @@
 ---
-allowed-tools: Bash, SlashCommand
+allowed-tools: Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(clasp:*), SlashCommand(/clasp)
 description: Complete deployment pipeline - git commit, push, and Apps Script deployment
 ---
 
-I'll perform a complete deployment pipeline: git add, commit, push, and then deploy to Google Apps Script.
+Performing complete deployment pipeline: git add, commit, push, and Apps Script deployment.
 
-First, I'll stage all changes:
-```bash
-git add .
-```
+!git add .
 
-Next, I'll commit with a descriptive message:
-```bash
-git commit -m "Deploy: $(date '+%Y-%m-%d %H:%M:%S')"
-```
+!git commit -m "Deploy: $(date '+%Y-%m-%d %H:%M:%S')"
 
-Then I'll push to the remote repository:
-```bash
-git push
-```
+!git push
 
-Finally, I'll deploy to Google Apps Script using the clasp command:
-```
 /clasp
-```
-
-This ensures your code is saved to git and deployed to the live Google Apps Script web application.

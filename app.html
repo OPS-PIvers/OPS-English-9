@@ -416,6 +416,10 @@
                 loadStudentProgressForDashboard();
                 console.log('initializeStudentDashboard: loadStudentProgressForDashboard() call completed');
 
+                console.log('initializeStudentDashboard: Setting up unit select event listener');
+                setupUnitSelectHandler();
+                console.log('initializeStudentDashboard: Unit select event listener set up successfully');
+
                 console.log('initializeStudentDashboard: Initialization completed successfully');
             } catch (error) {
                 console.error('initializeStudentDashboard: Error during initialization:', error);
@@ -548,39 +552,79 @@
             container.innerHTML = html;
         }
 
-        // Setup unit selection handler
-        document.getElementById('unitSelect').addEventListener('change', function() {
-            const selectedUnit = this.value;
-            const startBtn = document.getElementById('startPracticeBtn');
+        // Setup unit selection handler - called from initializeStudentDashboard()
+        function setupUnitSelectHandler() {
+            console.log('setupUnitSelectHandler: Setting up event listener');
+            const unitSelect = document.getElementById('unitSelect');
 
-            if (selectedUnit) {
-                startBtn.disabled = false;
-                loadTopicsForUnit(selectedUnit);
-            } else {
-                startBtn.disabled = true;
-                document.getElementById('topicSelect').innerHTML = '<option value="">All topics</option>';
+            if (!unitSelect) {
+                console.error('setupUnitSelectHandler: unitSelect element not found!');
+                return;
             }
-        });
+
+            console.log('setupUnitSelectHandler: unitSelect element found, attaching listener');
+
+            unitSelect.addEventListener('change', function() {
+                console.log('=== UNIT SELECT CHANGE EVENT FIRED ===');
+                const selectedUnit = this.value;
+                console.log('Unit select change handler: Selected unit:', selectedUnit);
+
+                const startBtn = document.getElementById('startPracticeBtn');
+
+                if (selectedUnit) {
+                    console.log('Unit select change handler: Unit selected, enabling start button and loading topics');
+                    startBtn.disabled = false;
+                    loadTopicsForUnit(selectedUnit);
+                } else {
+                    console.log('Unit select change handler: No unit selected, disabling start button');
+                    startBtn.disabled = true;
+                    document.getElementById('topicSelect').innerHTML = '<option value="">All topics</option>';
+                }
+            });
+
+            console.log('setupUnitSelectHandler: Event listener attached successfully');
+        }
 
         function loadTopicsForUnit(unit) {
+            console.log('=== loadTopicsForUnit: FUNCTION ENTRY ===');
+            console.log('loadTopicsForUnit: Called with unit:', unit);
+            console.log('loadTopicsForUnit: Unit type:', typeof unit);
+            console.log('loadTopicsForUnit: About to call google.script.run.getTopicsForUnit()');
+
             google.script.run
                 .withSuccessHandler(function(result) {
+                    console.log('loadTopicsForUnit: SUCCESS HANDLER - Server response:', result);
+                    console.log('loadTopicsForUnit: SUCCESS HANDLER - result.success:', result.success);
+
                     if (result.success) {
+                        console.log('loadTopicsForUnit: SUCCESS HANDLER - Topics array:', result.topics);
+                        console.log('loadTopicsForUnit: SUCCESS HANDLER - Number of topics:', result.topics.length);
+
                         const topicSelect = document.getElementById('topicSelect');
                         topicSelect.innerHTML = '<option value="">All topics</option>';
 
-                        result.topics.forEach(topic => {
+                        result.topics.forEach((topic, index) => {
+                            console.log('loadTopicsForUnit: SUCCESS HANDLER - Adding topic #' + index + ':', topic);
                             const option = document.createElement('option');
                             option.value = topic;
                             option.textContent = topic;
                             topicSelect.appendChild(option);
                         });
+
+                        console.log('loadTopicsForUnit: SUCCESS HANDLER - Topics dropdown populated successfully');
+                    } else {
+                        console.error('loadTopicsForUnit: SUCCESS HANDLER - result.success is false, message:', result.message);
                     }
                 })
                 .withFailureHandler(function(error) {
-                    console.error('Failed to load topics:', error);
+                    console.error('loadTopicsForUnit: FAILURE HANDLER - Error object:', error);
+                    console.error('loadTopicsForUnit: FAILURE HANDLER - Error message:', error.message);
+                    console.error('loadTopicsForUnit: FAILURE HANDLER - Error details:', JSON.stringify(error));
                 })
                 .getTopicsForUnit(unit);
+
+            console.log('loadTopicsForUnit: google.script.run call initiated (async)');
+            console.log('=== loadTopicsForUnit: FUNCTION EXIT ===');
         }
 
         function startPractice() {

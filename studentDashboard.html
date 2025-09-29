@@ -210,11 +210,15 @@
         function loadTopicsForUnit(unit) {
             google.script.run
                 .withSuccessHandler(function(result) {
+                    console.log('Topics response:', result);
                     if (result.success) {
+                        console.log('Topics array:', result.topics);
+                        console.log('Number of topics:', result.topics.length);
                         const topicSelect = document.getElementById('topicSelect');
                         topicSelect.innerHTML = '<option value="">All topics</option>';
 
                         result.topics.forEach(topic => {
+                            console.log('Adding topic:', topic);
                             const option = document.createElement('option');
                             option.value = topic;
                             option.textContent = topic;

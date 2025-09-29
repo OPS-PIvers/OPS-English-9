@@ -307,26 +307,54 @@ function getAvailableUnits() {
 
 function getTopicsForUnit(unit) {
   try {
+    Logger.log('=== getTopicsForUnit: START ===');
+    Logger.log('getTopicsForUnit: Received unit parameter: ' + unit);
+    Logger.log('getTopicsForUnit: Unit type: ' + typeof unit);
+
     // Validate session (both students and teachers can view topics)
     const sessionCheck = validateSession();
     if (!sessionCheck.success) {
+      Logger.log('getTopicsForUnit: Session validation failed: ' + sessionCheck.message);
       return {success: false, message: sessionCheck.message};
     }
+    Logger.log('getTopicsForUnit: Session validated successfully');
 
     const ss = getSpreadsheet();
     const questionsSheet = ss.getSheetByName('Grammar Questions');
     const data = questionsSheet.getDataRange().getValues();
+    Logger.log('getTopicsForUnit: Loaded ' + data.length + ' rows from Grammar Questions sheet');
+
     const topics = new Set();
+    let matchCount = 0;
 
     for (let i = 1; i < data.length; i++) {
+      const rowUnit = data[i][0];
+      const rowTopic = data[i][1];
+
+      if (i <= 5) { // Log first few rows for debugging
+        Logger.log('getTopicsForUnit: Row ' + i + ' - Unit: "' + rowUnit + '" (type: ' + typeof rowUnit + '), Topic: "' + rowTopic + '"');
+      }
+
       if (data[i][0] == unit && data[i][1]) {
         topics.add(data[i][1]);
+        matchCount++;
+        if (matchCount <= 5) { // Log first few matches
+          Logger.log('getTopicsForUnit: MATCH found at row ' + i + ' - Topic: "' + data[i][1] + '"');
+        }
       }
     }
 
-    return {success: true, topics: Array.from(topics)};
+    Logger.log('getTopicsForUnit: Found ' + matchCount + ' matching rows');
+    Logger.log('getTopicsForUnit: Unique topics found: ' + topics.size);
+    const topicsArray = Array.from(topics);
+    Logger.log('getTopicsForUnit: Topics array: ' + JSON.stringify(topicsArray));
+    Logger.log('=== getTopicsForUnit: END - SUCCESS ===');
+
+    return {success: true, topics: topicsArray};
   } catch (error) {
-    // Logger.log('Error in getTopicsForUnit: ' + error.toString());
+    Logger.log('=== getTopicsForUnit: END - ERROR ===');
+    Logger.log('getTopicsForUnit: Error: ' + error.toString());
+    Logger.log('getTopicsForUnit: Error stack: ' + error.stack);
     return {success: false, message: 'Error retrieving topics: ' + error.toString()};
   }
 }
