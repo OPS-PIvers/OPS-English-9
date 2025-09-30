@@ -208,6 +208,9 @@
                             <button id="submitBtn" class="btn btn-primary" onclick="submitAnswer()" disabled>
                                 Submit Answer
                             </button>
+                            <button id="nextBtn" class="btn btn-success-green" onclick="nextQuestion()" style="display: none;">
+                                Next Question
+                            </button>
                         </div>
 
                         <div id="hintContainer" class="hint-container" style="display: none;">
@@ -220,9 +223,6 @@
                     </div>
 
                     <div class="practice-controls">
-                        <button id="nextBtn" class="btn btn-primary" onclick="nextQuestion()" style="display: none;">
-                            Next Question
-                        </button>
                         <button id="finishBtn" class="btn btn-success" onclick="finishPractice()" style="display: none;">
                             Finish Practice
                         </button>
@@ -1148,16 +1148,23 @@
         }
 
         function showHint() {
-            document.getElementById('hintContainer').style.display = 'block';
+            const hintContainer = document.getElementById('hintContainer');
+            hintContainer.style.display = 'block';
+            // Keep yellow styling when shown via button (not after incorrect answer)
+            hintContainer.style.background = '#fffbeb';
+            hintContainer.style.borderColor = '#f6e05e';
         }
 
         function submitAnswer() {
             const question = questions[currentQuestionIndex];
             let userAnswer = '';
+            let selectedOption = null;
 
             if (question.questionType === 'Multiple Choice') {
                 const selected = document.querySelector('input[name="answer"]:checked');
                 userAnswer = selected ? selected.value : '';
+                // Get the parent answer-option div
+                selectedOption = selected ? selected.closest('.answer-option') : null;
             } else {
                 userAnswer = document.getElementById('freeTextAnswer').value.trim();
             }
@@ -1174,7 +1181,16 @@
                 score++;
             }
 
-            showFeedback(isCorrect, question.answer, userAnswer);
+            // Apply visual styling to the selected answer option
+            if (selectedOption) {
+                if (isCorrect) {
+                    selectedOption.classList.add('answer-option-correct');
+                } else {
+                    selectedOption.classList.add('answer-option-incorrect');
+                }
+            }
+
+            showFeedback(isCorrect, question);
             updateScoreDisplay();
 
             // Hide submit button, show next/finish button
@@ -1191,16 +1207,13 @@
             });
         }
 
-        function showFeedback(isCorrect, correctAnswer, userAnswer) {
-            const container = document.getElementById('feedbackContainer');
-            container.innerHTML = `
-                <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
-                    <h4>${isCorrect ? 'Correct!' : 'Incorrect'}</h4>
-                    ${!isCorrect ? `<p><strong>Correct answer:</strong> ${correctAnswer}</p>` : ''}
-                    ${!isCorrect ? `<p><strong>Your answer:</strong> ${userAnswer}</p>` : ''}
-                </div>
-            `;
-            container.style.display = 'block';
+        function showFeedback(isCorrect, question) {
+            const feedbackContainer = document.getElementById('feedbackContainer');
+            const hintContainer = document.getElementById('hintContainer');
+
+            // Hide both containers - hint will only show if "Show Hint" button is clicked
+            feedbackContainer.style.display = 'none';
+            hintContainer.style.display = 'none';
         }
 
         function nextQuestion() {
