@@ -21,7 +21,8 @@ The application connects to a Google Spreadsheet with these sheets:
 - **Student Proficiency [Teacher Name]**: Progress tracking sheets for each teacher
 
 ### Authentication & Security
-- Domain-restricted authentication (`@oronoschools.org` emails only)
+- Google OAuth automatic authentication (web app deployed as "User Accessing")
+- Domain-restricted authentication (`@orono.k12.mn.us` emails only)
 - Session-based user management with 24-hour expiration
 - Role-based access control (student vs teacher interfaces)
 - Teacher authorization via spreadsheet lookup
@@ -50,10 +51,7 @@ clasp logs          # View execution logs
 - `.clasp.json`: Local development configuration
 
 ### HTML Templates
-- `login.html`: Landing page with role selection
-- `studentLogin.html` / `teacherLogin.html`: Authentication forms
-- `studentDashboard.html` / `teacherDashboard.html`: Main interfaces
-- `grammarPractice.html`: Student exercise interface
+- `app.html`: Single-page application containing all views (student dashboard, teacher dashboard, grammar practice)
 - `styles.html`: Shared CSS styling
 
 ## Key Functions
@@ -63,9 +61,10 @@ clasp logs          # View execution logs
 - `getSpreadsheet()`: Returns configured spreadsheet instance
 
 ### Authentication
-- `authenticateStudent(email)` / `authenticateTeacher(email)`: Email-based login
+- `autoAuthenticate()`: OAuth-based automatic authentication using Session.getActiveUser().getEmail()
 - `validateSession(requiredUserType)`: Session validation middleware
 - `getCurrentUser()` / `logout()`: Session management
+- `isValidOronoEmail(email)` / `isTeacherEmail(email)`: Domain and role validation
 
 ### Student Functions
 - `getGrammarQuestions(unit, topic)`: Retrieve practice questions

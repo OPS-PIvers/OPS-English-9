@@ -320,15 +320,20 @@ body {
     border-radius: 12px;
     padding: 2rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .practice-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 2px solid #e2e8f0;
+    flex-shrink: 0;
 }
 
 .practice-info {
@@ -339,7 +344,7 @@ body {
 }
 
 .question-container {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .question-header {
@@ -389,7 +394,7 @@ body {
 }
 
 .answer-options {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .answer-option {
@@ -416,6 +421,16 @@ body {
     font-weight: 500;
 }
 
+.answer-option-correct {
+    background: #f0fff4 !important;
+    border-color: #68d391 !important;
+}
+
+.answer-option-incorrect {
+    background: #fed7d7 !important;
+    border-color: #fc8181 !important;
+}
+
 .answer-input textarea {
     min-height: 100px;
     resize: vertical;
@@ -424,17 +439,20 @@ body {
 .question-actions {
     display: flex;
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .practice-controls {
     text-align: center;
-    margin-top: 2rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
 }
 
 /* Feedback Styles */
 .feedback-container, .hint-container {
-    margin-top: 1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
     padding: 1rem;
     border-radius: 8px;
 }
@@ -442,6 +460,16 @@ body {
 .hint-container {
     background: #fffbeb;
     border: 1px solid #f6e05e;
+}
+
+.inline-hint {
+    background: #fffbeb;
+    border-left: 3px solid #f6e05e;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    color: #744210;
 }
 
 .feedback {

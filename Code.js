@@ -21,7 +21,7 @@ function include(filename) {
 
 // Get spreadsheet reference
 function getSpreadsheet() {
-  const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  const spreadsheetId = PropertiesService.getScriptProperties().getProperty(PROP_SPREADSHEET_ID);
   if (!spreadsheetId) {
     throw new Error('Spreadsheet ID not configured. Please run setupSpreadsheet() function first.');
   }
@@ -31,17 +31,17 @@ function getSpreadsheet() {
 // Domain and security validation functions
 function isValidOronoEmail(email) {
   if (!email || typeof email !== 'string') return false;
-  return email.toLowerCase().endsWith('@orono.k12.mn.us');
+  return email.toLowerCase().endsWith(VALID_EMAIL_DOMAIN);
 }
 
 function isTeacherEmail(email) {
   try {
     const ss = getSpreadsheet();
-    const teacherSheet = ss.getSheetByName('Teacher Emails');
+    const teacherSheet = ss.getSheetByName(SHEET_TEACHER_EMAILS);
     const data = teacherSheet.getDataRange().getValues();
 
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === email) {
+    for (let i = FIRST_DATA_ROW; i < data.length; i++) {
+      if (data[i][TEACHER_EMAIL_COL.EMAIL] === email) {
         return true;
       }
     }
@@ -60,11 +60,10 @@ function validateSession(requiredUserType) {
   }
 
   // Check if session has expired (24 hours)
-  const sessionTimestamp = PropertiesService.getUserProperties().getProperty('sessionTimestamp');
+  const sessionTimestamp = PropertiesService.getUserProperties().getProperty(PROP_SESSION_TIMESTAMP);
   if (sessionTimestamp) {
     const sessionAge = new Date().getTime() - parseInt(sessionTimestamp);
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-    if (sessionAge > maxAge) {
+    if (sessionAge > SESSION_MAX_AGE_MS) {
       logout();
       return {success: false, message: 'Session expired'};
     }
@@ -101,7 +100,7 @@ function setupSpreadsheet() {
       const testSheet = SpreadsheetApp.openById(spreadsheetId);
 
       // Store the ID
-      PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', spreadsheetId);
+      PropertiesService.getScriptProperties().setProperty(PROP_SPREADSHEET_ID, spreadsheetId);
 
       ui.alert('Success', 'Spreadsheet configured successfully!', ui.ButtonSet.OK);
 
@@ -127,51 +126,51 @@ function autoAuthenticate() {
 
     // Validate domain first
     if (!isValidOronoEmail(email)) {
-      return {success: false, message: 'Please use your Orono Schools email address (@orono.k12.mn.us).'};
+      return {success: false, message: 'Please use your Orono Schools email address (' + VALID_EMAIL_DOMAIN + ').'};
     }
 
     const ss = getSpreadsheet();
 
     // Check if user is a teacher first
-    const teacherSheet = ss.getSheetByName('Teacher Emails');
+    const teacherSheet = ss.getSheetByName(SHEET_TEACHER_EMAILS);
     const teacherData = teacherSheet.getDataRange().getValues();
 
-    for (let i = 1; i < teacherData.length; i++) {
-      if (teacherData[i][0] === email) {
+    for (let i = FIRST_DATA_ROW; i < teacherData.length; i++) {
+      if (teacherData[i][TEACHER_EMAIL_COL.EMAIL] === email) {
         // Store teacher session
-        PropertiesService.getUserProperties().setProperties({
-          'userType': 'teacher',
-          'userEmail': email,
-          'sessionTimestamp': new Date().getTime().toString()
-        });
+        const sessionProps = {};
+        sessionProps[PROP_USER_TYPE] = USER_TYPE_TEACHER;
+        sessionProps[PROP_USER_EMAIL] = email;
+        sessionProps[PROP_SESSION_TIMESTAMP] = new Date().getTime().toString();
+        PropertiesService.getUserProperties().setProperties(sessionProps);
 
-        return {success: true, userType: 'teacher', userEmail: email};
+        return {success: true, userType: USER_TYPE_TEACHER, userEmail: email};
       }
     }
 
     // Check if user is a student
-    const rosterSheet = ss.getSheetByName('Student Roster');
+    const rosterSheet = ss.getSheetByName(SHEET_STUDENT_ROSTER);
     const studentData = rosterSheet.getDataRange().getValues();
 
-    for (let i = 1; i < studentData.length; i++) {
-      if (studentData[i][0] === email) {
+    for (let i = FIRST_DATA_ROW; i < studentData.length; i++) {
+      if (studentData[i][ROSTER_COL.EMAIL] === email) {
         const studentInfo = {
-          email: studentData[i][0],
-          lastName: studentData[i][1],
-          firstName: studentData[i][2],
-          teacher: studentData[i][3],
-          period: studentData[i][4]
+          email: studentData[i][ROSTER_COL.EMAIL],
+          lastName: studentData[i][ROSTER_COL.LAST_NAME],
+          firstName: studentData[i][ROSTER_COL.FIRST_NAME],
+          teacher: studentData[i][ROSTER_COL.TEACHER],
+          period: studentData[i][ROSTER_COL.PERIOD]
         };
 
         // Store student session
-        PropertiesService.getUserProperties().setProperties({
-          'userType': 'student',
-          'userEmail': email,
-          'studentInfo': JSON.stringify(studentInfo),
-          'sessionTimestamp': new Date().getTime().toString()
-        });
+        const sessionProps = {};
+        sessionProps[PROP_USER_TYPE] = USER_TYPE_STUDENT;
+        sessionProps[PROP_USER_EMAIL] = email;
+        sessionProps[PROP_STUDENT_INFO] = JSON.stringify(studentInfo);
+        sessionProps[PROP_SESSION_TIMESTAMP] = new Date().getTime().toString();
+        PropertiesService.getUserProperties().setProperties(sessionProps);
 
-        return {success: true, userType: 'student', userEmail: email, studentInfo: studentInfo};
+        return {success: true, userType: USER_TYPE_STUDENT, userEmail: email, studentInfo: studentInfo};
       }
     }
 
@@ -184,34 +183,12 @@ function autoAuthenticate() {
   }
 }
 
-// Legacy functions kept for backward compatibility (can be removed later)
-function authenticateStudent() {
-  const result = autoAuthenticate();
-  if (result.success && result.userType === 'student') {
-    return {success: true, studentInfo: result.studentInfo};
-  } else if (result.success && result.userType === 'teacher') {
-    return {success: false, message: 'Teacher accounts cannot access the student interface. Please use the teacher dashboard.'};
-  } else {
-    return result;
-  }
-}
-
-function authenticateTeacher() {
-  const result = autoAuthenticate();
-  if (result.success && result.userType === 'teacher') {
-    return {success: true, teacherEmail: result.userEmail};
-  } else if (result.success && result.userType === 'student') {
-    return {success: false, message: 'Student accounts cannot access the teacher interface. Please use the student dashboard.'};
-  } else {
-    return result;
-  }
-}
 
 // Session management
 function getCurrentUser() {
   const userProps = PropertiesService.getUserProperties();
-  const userType = userProps.getProperty('userType');
-  const userEmail = userProps.getProperty('userEmail');
+  const userType = userProps.getProperty(PROP_USER_TYPE);
+  const userEmail = userProps.getProperty(PROP_USER_EMAIL);
 
   if (!userType || !userEmail) {
     return {success: false, message: 'No active session'};
@@ -223,8 +200,8 @@ function getCurrentUser() {
     userEmail: userEmail
   };
 
-  if (userType === 'student') {
-    const studentInfo = userProps.getProperty('studentInfo');
+  if (userType === USER_TYPE_STUDENT) {
+    const studentInfo = userProps.getProperty(PROP_STUDENT_INFO);
     if (studentInfo) {
       result.studentInfo = JSON.parse(studentInfo);
     }
@@ -242,32 +219,32 @@ function logout() {
 function getGrammarQuestions(unit, topic) {
   try {
     // Validate student session
-    const sessionCheck = validateSession('student');
+    const sessionCheck = validateSession(USER_TYPE_STUDENT);
     if (!sessionCheck.success) {
       return {success: false, message: sessionCheck.message};
     }
 
     const ss = getSpreadsheet();
-    const questionsSheet = ss.getSheetByName('Grammar Questions');
+    const questionsSheet = ss.getSheetByName(SHEET_GRAMMAR_QUESTIONS);
     const data = questionsSheet.getDataRange().getValues();
     const questions = [];
 
-    for (let i = 1; i < data.length; i++) {
+    for (let i = FIRST_DATA_ROW; i < data.length; i++) {
       const row = data[i];
-      if ((!unit || row[0] == unit) && (!topic || row[1] === topic)) {
+      if ((!unit || row[QUESTION_COL.UNIT] == unit) && (!topic || row[QUESTION_COL.TOPIC] === topic)) {
         questions.push({
-          unit: row[0],
-          topic: row[1],
-          topicDescription: row[2],
-          questionType: row[3],
-          difficultyLevel: row[4],
-          question: row[5],
-          answer: row[6],
-          incorrect1: row[7],
-          incorrect2: row[8],
-          incorrect3: row[9],
-          incorrect4: row[10],
-          hint: row[11]
+          unit: row[QUESTION_COL.UNIT],
+          topic: row[QUESTION_COL.TOPIC],
+          topicDescription: row[QUESTION_COL.TOPIC_DESCRIPTION],
+          questionType: row[QUESTION_COL.QUESTION_TYPE],
+          difficultyLevel: row[QUESTION_COL.DIFFICULTY_LEVEL],
+          question: row[QUESTION_COL.QUESTION],
+          answer: row[QUESTION_COL.ANSWER],
+          incorrect1: row[QUESTION_COL.INCORRECT_1],
+          incorrect2: row[QUESTION_COL.INCORRECT_2],
+          incorrect3: row[QUESTION_COL.INCORRECT_3],
+          incorrect4: row[QUESTION_COL.INCORRECT_4],
+          hint: row[QUESTION_COL.HINT]
         });
       }
     }
@@ -288,13 +265,13 @@ function getAvailableUnits() {
     }
 
     const ss = getSpreadsheet();
-    const questionsSheet = ss.getSheetByName('Grammar Questions');
+    const questionsSheet = ss.getSheetByName(SHEET_GRAMMAR_QUESTIONS);
     const data = questionsSheet.getDataRange().getValues();
     const units = new Set();
 
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0]) {
-        units.add(data[i][0]);
+    for (let i = FIRST_DATA_ROW; i < data.length; i++) {
+      if (data[i][QUESTION_COL.UNIT]) {
+        units.add(data[i][QUESTION_COL.UNIT]);
       }
     }
 
@@ -320,26 +297,26 @@ function getTopicsForUnit(unit) {
     Logger.log('getTopicsForUnit: Session validated successfully');
 
     const ss = getSpreadsheet();
-    const questionsSheet = ss.getSheetByName('Grammar Questions');
+    const questionsSheet = ss.getSheetByName(SHEET_GRAMMAR_QUESTIONS);
     const data = questionsSheet.getDataRange().getValues();
     Logger.log('getTopicsForUnit: Loaded ' + data.length + ' rows from Grammar Questions sheet');
 
     const topics = new Set();
     let matchCount = 0;
 
-    for (let i = 1; i < data.length; i++) {
-      const rowUnit = data[i][0];
-      const rowTopic = data[i][1];
+    for (let i = FIRST_DATA_ROW; i < data.length; i++) {
+      const rowUnit = data[i][QUESTION_COL.UNIT];
+      const rowTopic = data[i][QUESTION_COL.TOPIC];
 
       if (i <= 5) { // Log first few rows for debugging
         Logger.log('getTopicsForUnit: Row ' + i + ' - Unit: "' + rowUnit + '" (type: ' + typeof rowUnit + '), Topic: "' + rowTopic + '"');
       }
 
-      if (data[i][0] == unit && data[i][1]) {
-        topics.add(data[i][1]);
+      if (data[i][QUESTION_COL.UNIT] == unit && data[i][QUESTION_COL.TOPIC]) {
+        topics.add(data[i][QUESTION_COL.TOPIC]);
         matchCount++;
         if (matchCount <= 5) { // Log first few matches
-          Logger.log('getTopicsForUnit: MATCH found at row ' + i + ' - Topic: "' + data[i][1] + '"');
+          Logger.log('getTopicsForUnit: MATCH found at row ' + i + ' - Topic: "' + data[i][QUESTION_COL.TOPIC] + '"');
         }
       }
     }
@@ -363,7 +340,7 @@ function getTopicsForUnit(unit) {
 function recordStudentScore(unit, score, total) {
   try {
     // Validate student session
-    const sessionCheck = validateSession('student');
+    const sessionCheck = validateSession(USER_TYPE_STUDENT);
     if (!sessionCheck.success) {
       return {success: false, message: sessionCheck.message};
     }
@@ -381,7 +358,7 @@ function recordStudentScore(unit, score, total) {
 
     for (let sheet of sheets) {
       const name = sheet.getName();
-      if (name.includes('Student Proficiency') && name.includes(teacherName)) {
+      if (name.includes(SHEET_STUDENT_PROFICIENCY_PREFIX) && name.includes(teacherName)) {
         proficiencySheet = sheet;
         break;
       }
@@ -396,15 +373,15 @@ function recordStudentScore(unit, score, total) {
     const studentName = studentInfo.firstName + ' ' + studentInfo.lastName;
 
     // Add new row with score data
-    proficiencySheet.appendRow([
-      timestamp,
-      studentEmail,
-      studentName,
-      unit,
-      score,
-      total,
-      percentage
-    ]);
+    const rowData = [];
+    rowData[PROFICIENCY_COL.TIMESTAMP] = timestamp;
+    rowData[PROFICIENCY_COL.EMAIL] = studentEmail;
+    rowData[PROFICIENCY_COL.NAME] = studentName;
+    rowData[PROFICIENCY_COL.UNIT] = unit;
+    rowData[PROFICIENCY_COL.SCORE] = score;
+    rowData[PROFICIENCY_COL.TOTAL] = total;
+    rowData[PROFICIENCY_COL.PERCENTAGE] = percentage;
+    proficiencySheet.appendRow(rowData);
 
     return {success: true, message: 'Score recorded successfully'};
   } catch (error) {
@@ -424,7 +401,7 @@ function getStudentProgress(studentEmail) {
     }
 
     // If teacher is requesting, use provided email; if student, use their own email
-    const targetEmail = (userInfo.userType === 'teacher') ? studentEmail : userInfo.userEmail;
+    const targetEmail = (userInfo.userType === USER_TYPE_TEACHER) ? studentEmail : userInfo.userEmail;
 
     if (!targetEmail) {
       // Logger.log('getStudentProgress: No target email found - userInfo: ' + JSON.stringify(userInfo));
@@ -436,7 +413,7 @@ function getStudentProgress(studentEmail) {
     const sheets = ss.getSheets();
     const progressData = [];
 
-    if (userInfo.userType === 'student') {
+    if (userInfo.userType === USER_TYPE_STUDENT) {
       // For students: target the specific teacher's proficiency sheet
       const studentInfo = userInfo.studentInfo;
       if (!studentInfo || !studentInfo.teacher) {
@@ -452,7 +429,7 @@ function getStudentProgress(studentEmail) {
       for (let sheet of sheets) {
         const name = sheet.getName();
         // Logger.log('getStudentProgress: Checking sheet: ' + name);
-        if (name.includes('Student Proficiency') && name.includes(teacherName)) {
+        if (name.includes(SHEET_STUDENT_PROFICIENCY_PREFIX) && name.includes(teacherName)) {
           targetSheet = sheet;
           // Logger.log('getStudentProgress: Found target sheet: ' + name);
           break;
@@ -468,20 +445,22 @@ function getStudentProgress(studentEmail) {
       const data = targetSheet.getDataRange().getValues();
       // Logger.log('getStudentProgress: Sheet has ' + data.length + ' rows');
 
-      for (let i = 1; i < data.length; i++) {
-        // Logger.log('getStudentProgress: Row ' + i + ' email: "' + data[i][1] + '" vs target: "' + targetEmail + '"');
-        if (data[i][1] === targetEmail) { // Column B: Student email
+      for (let i = FIRST_DATA_ROW; i < data.length; i++) {
+        // Logger.log('getStudentProgress: Row ' + i + ' email: "' + data[i][PROFICIENCY_COL.EMAIL] + '" vs target: "' + targetEmail + '"');
+        if (data[i][PROFICIENCY_COL.EMAIL] === targetEmail) {
           // Convert timestamp to string to avoid serialization issues
-          const timestampString = data[i][0] instanceof Date ? data[i][0].toISOString() : data[i][0].toString();
+          const timestampString = data[i][PROFICIENCY_COL.TIMESTAMP] instanceof Date ?
+            data[i][PROFICIENCY_COL.TIMESTAMP].toISOString() :
+            data[i][PROFICIENCY_COL.TIMESTAMP].toString();
 
           progressData.push({
             timestamp: timestampString,
-            studentEmail: data[i][1],
-            studentName: data[i][2],
-            unit: data[i][3],
-            score: data[i][4],
-            total: data[i][5],
-            percentage: data[i][6]
+            studentEmail: data[i][PROFICIENCY_COL.EMAIL],
+            studentName: data[i][PROFICIENCY_COL.NAME],
+            unit: data[i][PROFICIENCY_COL.UNIT],
+            score: data[i][PROFICIENCY_COL.SCORE],
+            total: data[i][PROFICIENCY_COL.TOTAL],
+            percentage: data[i][PROFICIENCY_COL.PERCENTAGE]
           });
           // Logger.log('getStudentProgress: Added progress record: ' + JSON.stringify(progressData[progressData.length - 1]));
         }
@@ -491,23 +470,25 @@ function getStudentProgress(studentEmail) {
       // Logger.log('getStudentProgress: Teacher mode - searching all proficiency sheets');
       for (let sheet of sheets) {
         const name = sheet.getName();
-        if (name.includes('Student Proficiency')) {
+        if (name.includes(SHEET_STUDENT_PROFICIENCY_PREFIX)) {
           // Logger.log('getStudentProgress: Searching sheet: ' + name);
           const data = sheet.getDataRange().getValues();
 
-          for (let i = 1; i < data.length; i++) {
-            if (data[i][1] === targetEmail) { // Column B: Student email
+          for (let i = FIRST_DATA_ROW; i < data.length; i++) {
+            if (data[i][PROFICIENCY_COL.EMAIL] === targetEmail) {
               // Convert timestamp to string to avoid serialization issues
-              const timestampString = data[i][0] instanceof Date ? data[i][0].toISOString() : data[i][0].toString();
+              const timestampString = data[i][PROFICIENCY_COL.TIMESTAMP] instanceof Date ?
+                data[i][PROFICIENCY_COL.TIMESTAMP].toISOString() :
+                data[i][PROFICIENCY_COL.TIMESTAMP].toString();
 
               progressData.push({
                 timestamp: timestampString,
-                studentEmail: data[i][1],
-                studentName: data[i][2],
-                unit: data[i][3],
-                score: data[i][4],
-                total: data[i][5],
-                percentage: data[i][6]
+                studentEmail: data[i][PROFICIENCY_COL.EMAIL],
+                studentName: data[i][PROFICIENCY_COL.NAME],
+                unit: data[i][PROFICIENCY_COL.UNIT],
+                score: data[i][PROFICIENCY_COL.SCORE],
+                total: data[i][PROFICIENCY_COL.TOTAL],
+                percentage: data[i][PROFICIENCY_COL.PERCENTAGE]
               });
             }
           }
@@ -568,7 +549,7 @@ function getStudentProgress(studentEmail) {
 function getTeacherStudents() {
   try {
     // Validate teacher session
-    const sessionCheck = validateSession('teacher');
+    const sessionCheck = validateSession(USER_TYPE_TEACHER);
     if (!sessionCheck.success) {
       return {success: false, message: sessionCheck.message};
     }
@@ -576,7 +557,7 @@ function getTeacherStudents() {
     const ss = getSpreadsheet();
     const userInfo = sessionCheck.userInfo;
 
-    const rosterSheet = ss.getSheetByName('Student Roster');
+    const rosterSheet = ss.getSheetByName(SHEET_STUDENT_ROSTER);
     const data = rosterSheet.getDataRange().getValues();
     const students = [];
 
@@ -584,16 +565,16 @@ function getTeacherStudents() {
     const teacherEmail = userInfo.userEmail;
     const teacherName = teacherEmail.split('@')[0].replace('.', ' ');
 
-    for (let i = 1; i < data.length; i++) {
+    for (let i = FIRST_DATA_ROW; i < data.length; i++) {
       const row = data[i];
       // Column D contains teacher name - match against current teacher
-      if (row[3] && row[3].toLowerCase().includes(teacherName.toLowerCase())) {
+      if (row[ROSTER_COL.TEACHER] && row[ROSTER_COL.TEACHER].toLowerCase().includes(teacherName.toLowerCase())) {
         students.push({
-          email: row[0],
-          lastName: row[1],
-          firstName: row[2],
-          teacher: row[3],
-          period: row[4]
+          email: row[ROSTER_COL.EMAIL],
+          lastName: row[ROSTER_COL.LAST_NAME],
+          firstName: row[ROSTER_COL.FIRST_NAME],
+          teacher: row[ROSTER_COL.TEACHER],
+          period: row[ROSTER_COL.PERIOD]
         });
       }
     }
@@ -608,7 +589,7 @@ function getTeacherStudents() {
 function getClassStatistics() {
   try {
     // Validate teacher session
-    const sessionCheck = validateSession('teacher');
+    const sessionCheck = validateSession(USER_TYPE_TEACHER);
     if (!sessionCheck.success) {
       return {success: false, message: sessionCheck.message};
     }
@@ -629,20 +610,20 @@ function getClassStatistics() {
     // Collect all sessions for teacher's students
     for (let sheet of sheets) {
       const name = sheet.getName();
-      if (name.includes('Student Proficiency')) {
+      if (name.includes(SHEET_STUDENT_PROFICIENCY_PREFIX)) {
         const data = sheet.getDataRange().getValues();
 
-        for (let i = 1; i < data.length; i++) {
-          const studentEmail = data[i][1];
+        for (let i = FIRST_DATA_ROW; i < data.length; i++) {
+          const studentEmail = data[i][PROFICIENCY_COL.EMAIL];
           if (studentEmails.includes(studentEmail)) {
             allSessions.push({
-              timestamp: data[i][0],
+              timestamp: data[i][PROFICIENCY_COL.TIMESTAMP],
               studentEmail: studentEmail,
-              studentName: data[i][2],
-              unit: data[i][3],
-              score: data[i][4],
-              total: data[i][5],
-              percentage: data[i][6]
+              studentName: data[i][PROFICIENCY_COL.NAME],
+              unit: data[i][PROFICIENCY_COL.UNIT],
+              score: data[i][PROFICIENCY_COL.SCORE],
+              total: data[i][PROFICIENCY_COL.TOTAL],
+              percentage: data[i][PROFICIENCY_COL.PERCENTAGE]
             });
           }
         }
@@ -696,7 +677,7 @@ function getClassStatistics() {
 function getFilteredProgress(studentEmail, unit) {
   try {
     // Validate teacher session
-    const sessionCheck = validateSession('teacher');
+    const sessionCheck = validateSession(USER_TYPE_TEACHER);
     if (!sessionCheck.success) {
       return {success: false, message: sessionCheck.message};
     }
@@ -715,12 +696,12 @@ function getFilteredProgress(studentEmail, unit) {
     // Search all proficiency sheets
     for (let sheet of sheets) {
       const name = sheet.getName();
-      if (name.includes('Student Proficiency')) {
+      if (name.includes(SHEET_STUDENT_PROFICIENCY_PREFIX)) {
         const data = sheet.getDataRange().getValues();
 
-        for (let i = 1; i < data.length; i++) {
-          const sessionStudentEmail = data[i][1];
-          const sessionUnit = data[i][3];
+        for (let i = FIRST_DATA_ROW; i < data.length; i++) {
+          const sessionStudentEmail = data[i][PROFICIENCY_COL.EMAIL];
+          const sessionUnit = data[i][PROFICIENCY_COL.UNIT];
 
           // Apply filters
           if (!validStudentEmails.includes(sessionStudentEmail)) continue;
@@ -728,13 +709,13 @@ function getFilteredProgress(studentEmail, unit) {
           if (unit && sessionUnit != unit) continue;
 
           progressData.push({
-            timestamp: data[i][0],
+            timestamp: data[i][PROFICIENCY_COL.TIMESTAMP],
             studentEmail: sessionStudentEmail,
-            studentName: data[i][2],
+            studentName: data[i][PROFICIENCY_COL.NAME],
             unit: sessionUnit,
-            score: data[i][4],
-            total: data[i][5],
-            percentage: data[i][6]
+            score: data[i][PROFICIENCY_COL.SCORE],
+            total: data[i][PROFICIENCY_COL.TOTAL],
+            percentage: data[i][PROFICIENCY_COL.PERCENTAGE]
           });
         }
       }
